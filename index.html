@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unique Lee</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<div class="map-overlay" id="mapOverlay">
+  <div class="map-loading">Loading World Interface...</div>
+  <div id="globeContainer"></div>
+  <div class="exit-hint">Press ESC to exit</div>
+</div>
+<body>
+
+<!-- INTRO -->
+<div class="intro">
+  <div class="intro-name">Unique Lee</div>
+  <div class="intro-start">Press Start to Continue</div>
+</div>
+
+<!-- LOADER -->
+<div class="loader">loading...</div>
+
+<!-- CURSOR -->
+<div class="cursor"></div>
+
+<!-- CHAPTER UI -->
+<div class="chapter-ui">
+  <div class="chapter-label">Chapter</div>
+  <div class="chapter-title" id="chapterTitle">Prologue</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#about">About</a>
+  <a href="#projects">Projects</a>
+  <a href="#links">Links</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" data-chapter="Prologue">
+  <h1 class="fade-up">
+    <span class="interactive-word">Unique</span>
+    <span class="interactive-word">Lee</span>
+  </h1>
+  <p class="fade-up">Building ideas into digital experiences.</p>
+  <canvas id="web"></canvas>
+</section>
+
+<!-- ABOUT -->
+<section id="about" data-chapter="About Me">
+  <h2 class="fade-up">
+    I <span class="interactive-word">design</span> and 
+    <span class="interactive-word">build</span> interactive digital experiences.
+  </h2>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects" data-chapter="Projects">
+  <h2 class="fade-up">Projects</h2>
+
+  <div class="projects">
+    <div class="project fade-up">Convenient Web Concept</div>
+    <div class="project fade-up">Personal Website</div>
+    <div class="project fade-up">Future Ideas</div>
+  </div><div class="project fade-up" id="openMap">
+  Moorish Thematic Map
+</div>
+</section>
+
+<!-- LINKS -->
+<section id="links" data-chapter="Contact">
+  <h2 class="fade-up">Connect</h2>
+
+  <div class="links-box">
+    <a href="#">Instagram</a>
+    <a href="#">GitHub</a>
+    <a href="#">Email</a>
+  </div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
