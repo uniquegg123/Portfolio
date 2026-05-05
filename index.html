@@ -7,15 +7,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
   <link rel="stylesheet" href="style.css">
 </head>
+
+<body>
+
+<!-- 🌍 MAP OVERLAY (FIXED POSITION + FADE LAYER) -->
 <div class="map-overlay" id="mapOverlay">
   <div class="map-loading">Loading World Interface...</div>
+
   <div id="globeContainer"></div>
+
   <div class="exit-hint">Press ESC to exit</div>
+
+  <!-- 🔥 REQUIRED for fade-to-black -->
+  <div class="map-fade"></div>
 </div>
-<body>
 
 <!-- INTRO -->
 <div class="intro">
@@ -68,9 +78,11 @@
     <div class="project fade-up">Convenient Web Concept</div>
     <div class="project fade-up">Personal Website</div>
     <div class="project fade-up">Future Ideas</div>
-  </div><div class="project fade-up" id="openMap">
-  Moorish Thematic Map
-</div>
+  </div>
+
+  <div class="project fade-up" id="openMap">
+    Moorish Thematic Map
+  </div>
 </section>
 
 <!-- LINKS -->
@@ -85,5 +97,6 @@
 </section>
 
 <script src="script.js"></script>
+
 </body>
 </html>

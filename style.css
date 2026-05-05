@@ -94,7 +94,7 @@ body::before {
 }
 
 /* =========================
-   CURSOR (FIXED)
+   CURSOR
 ========================= */
 .cursor {
   width: 16px;
@@ -249,17 +249,31 @@ section.visible {
 }
 
 /* =========================
-   CANVAS
+   CANVAS (FIXED)
 ========================= */
+/* IMPORTANT FIX:
+   we DO NOT block pointer events anymore */
 canvas {
   position: absolute;
   inset: 0;
-  pointer-events: none;
   z-index: 0;
 }
 
 /* =========================
-   MAP OVERLAY (FIXED)
+   🌍 GLOBE FIX (CRITICAL)
+========================= */
+#globeContainer canvas {
+  pointer-events: auto !important; /* 🔥 THIS FIXES YOUR DRAG */
+  cursor: grab;
+}
+
+/* optional mobile fix */
+#globeContainer {
+  touch-action: none;
+}
+
+/* =========================
+   MAP OVERLAY
 ========================= */
 .map-overlay {
   position: fixed;
@@ -273,7 +287,6 @@ canvas {
   display: block;
 }
 
-/* IMPORTANT FIX: remove stuck loading text when active */
 .map-overlay.active .map-loading {
   display: none;
 }
@@ -283,7 +296,7 @@ canvas {
   height: 100%;
 }
 
-/* loading text (only before init) */
+/* loading text */
 .map-loading {
   position: absolute;
   top: 50%;
@@ -306,12 +319,7 @@ canvas {
   font-size: 0.8rem;
 }
 
-/* canvas fix */
-#globeContainer canvas {
-  display: block;
-}/* =========================
-   FADE TO BLACK LAYER
-========================= */
+/* fade layer */
 .map-fade {
   position: absolute;
   inset: 0;

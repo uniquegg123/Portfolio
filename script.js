@@ -3,9 +3,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const sections = document.querySelectorAll("section");
   const navLinks = document.querySelectorAll(".nav a");
 
-  // =========================
-  // INTRO
-  // =========================
   const intro = document.querySelector(".intro");
 
   if (intro) {
@@ -19,16 +16,11 @@ window.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("keydown", exitIntro, { once: true });
   }
 
-  // =========================
-  // LOADER
-  // =========================
   const loader = document.querySelector(".loader");
+
   const showLoader = () => loader?.classList.add("show");
   const hideLoader = () => loader?.classList.remove("show");
 
-  // =========================
-  // SECTION SYSTEM
-  // =========================
   let current = sections[0];
 
   function updateChapter() {
@@ -51,7 +43,7 @@ window.addEventListener("DOMContentLoaded", () => {
       hideLoader();
       updateChapter();
       reveal();
-    }, 350);
+    }, 300);
   }
 
   sections.forEach((sec, i) => {
@@ -68,9 +60,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   updateChapter();
 
-  // =========================
-  // FADE IN
-  // =========================
   const faders = document.querySelectorAll(".fade-up");
 
   function reveal() {
@@ -83,9 +72,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   reveal();
 
-  // =========================
-  // CURSOR
-  // =========================
   const cursor = document.querySelector(".cursor");
 
   document.addEventListener("mousemove", (e) => {
@@ -95,38 +81,41 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================
-  // 🌍 GLOBE SYSTEM
+  // 🌍 FIXED GLASS-CLEAN DRAG SYSTEM
   // =========================
   const overlay = document.getElementById("mapOverlay");
   const openMap = document.getElementById("openMap");
 
   let scene, camera, renderer, globe;
   let animationId;
-
-  let isDragging = false;
-  let prevX = 0;
-  let prevY = 0;
-
-  let rotX = 0;
-  let rotY = 0;
-
   let running = false;
 
   const fadeLayer = document.querySelector(".map-fade");
-  const mapLoading = document.querySelector(".map-loading");
+
+  let autoSpin = 0.0005;
+
+  // direct rotation (NO velocity system)
+  let rotX = 0;
+  let rotY = 0;
+  let targetRotX = 0;
+  let targetRotY = 0;
+
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  let raycaster = new THREE.Raycaster();
+  let mouse = new THREE.Vector2();
+
+  let hoveredCountry = null;
+  let selectedCountry = null;
+
+  const countryGroups = [];
 
   if (openMap && overlay) {
-
     openMap.addEventListener("click", () => {
       overlay.classList.add("active");
-
-      if (mapLoading) mapLoading.style.display = "block";
-
-      setTimeout(() => {
-        initGlobe();
-
-        if (mapLoading) mapLoading.style.display = "none";
-      }, 250);
+      setTimeout(initGlobe, 200);
     });
 
     window.addEventListener("keydown", (e) => {
@@ -138,15 +127,10 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // =========================
-  // CLOSE (FADE TO BLACK FIXED)
-  // =========================
   function closeMap() {
     if (fadeLayer) fadeLayer.classList.add("active");
 
     setTimeout(() => {
-
-      overlay.classList.add("closing");
 
       running = false;
       cancelAnimationFrame(animationId);
@@ -156,28 +140,103 @@ window.addEventListener("DOMContentLoaded", () => {
         renderer.domElement.remove();
       }
 
-      globe = null;
       scene = null;
       camera = null;
+      globe = null;
+      countryGroups.length = 0;
 
       const container = document.getElementById("globeContainer");
       if (container) container.innerHTML = "";
 
       setTimeout(() => {
-        overlay.classList.remove("active", "closing");
+        overlay.classList.remove("active");
         if (fadeLayer) fadeLayer.classList.remove("active");
       }, 300);
 
-    }, 600);
+    }, 400);
+  }
+
+  function latLonToVector3(lat, lon, radius) {
+    const phi = (90 - lat) * Math.PI / 180;
+    const theta = (lon + 180) * Math.PI / 180;
+
+    return new THREE.Vector3(
+      -radius * Math.sin(phi) * Math.cos(theta),
+      radius * Math.cos(phi),
+      radius * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  function drawCountryLine(coords, radius) {
+
+    const points = [];
+
+    for (let i = 0; i < coords.length; i += 2) {
+      const [lon, lat] = coords[i];
+      points.push(latLonToVector3(lat, lon, radius));
+    }
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+    const baseMat = new THREE.LineBasicMaterial({
+      color: 0xffcc88,
+      transparent: true,
+      opacity: 0.45
+    });
+
+    const baseLine = new THREE.Line(geometry, baseMat);
+
+    const glowMat = new THREE.LineBasicMaterial({
+      color: 0xffe6a3,
+      transparent: true,
+      opacity: 0
+    });
+
+    const glowLine = new THREE.Line(geometry.clone(), glowMat);
+    glowLine.scale.multiplyScalar(1.01);
+
+    const group = new THREE.Group();
+    group.add(baseLine);
+    group.add(glowLine);
+
+    group.userData = { baseLine, glowLine };
+
+    globe.add(group);
+    countryGroups.push(group);
+  }
+
+  function loadCountries() {
+    fetch("https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json")
+      .then(res => res.json())
+      .then(data => {
+
+        const radius = 2.2;
+
+        data.features.forEach(feature => {
+          const geom = feature.geometry;
+          if (!geom) return;
+
+          if (geom.type === "Polygon") {
+            geom.coordinates.forEach(ring => {
+              drawCountryLine(ring, radius);
+            });
+          }
+
+          if (geom.type === "MultiPolygon") {
+            geom.coordinates.forEach(poly => {
+              poly.forEach(ring => {
+                drawCountryLine(ring, radius);
+              });
+            });
+          }
+        });
+      });
   }
 
   function initGlobe() {
+
     const container = document.getElementById("globeContainer");
     if (!container) return;
-
-    rotX = 0;
-    rotY = 0;
-    isDragging = false;
 
     scene = new THREE.Scene();
 
@@ -190,76 +249,95 @@ window.addEventListener("DOMContentLoaded", () => {
 
     renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: false
+      antialias: false,
+      powerPreference: "high-performance"
     });
 
-    renderer.setPixelRatio(1);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
-    const geometry = new THREE.SphereGeometry(2.2, 18, 18);
-
-    const material = new THREE.MeshBasicMaterial({
-      color: 0x8a5a3c,
-      wireframe: true
+    const globeGeo = new THREE.SphereGeometry(2.2, 24, 24);
+    const globeMat = new THREE.MeshBasicMaterial({
+      color: 0x2d1b12,
+      wireframe: true,
+      opacity: 0.25,
+      transparent: true
     });
 
-    globe = new THREE.Mesh(geometry, material);
+    globe = new THREE.Mesh(globeGeo, globeMat);
     scene.add(globe);
 
     camera.position.z = 5.5;
 
-    const dom = renderer.domElement;
-    dom.style.pointerEvents = "auto";
-    dom.style.cursor = "grab";
+    loadCountries();
 
+    const dom = renderer.domElement;
+
+    dom.style.cursor = "grab";
+    dom.style.touchAction = "none";
+
+    // =========================
+    // CLEAN DRAG (NO STICKY MOTION)
+    // =========================
     dom.addEventListener("pointerdown", (e) => {
-      isDragging = true;
-      prevX = e.clientX;
-      prevY = e.clientY;
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
       dom.setPointerCapture(e.pointerId);
+      dom.style.cursor = "grabbing";
     });
 
-    dom.addEventListener("pointerup", (e) => {
-      isDragging = false;
-      dom.releasePointerCapture(e.pointerId);
+    dom.addEventListener("pointerup", () => {
+      dragging = false;
+      dom.style.cursor = "grab";
+    });
+
+    dom.addEventListener("pointerleave", () => {
+      dragging = false;
+      dom.style.cursor = "grab";
     });
 
     dom.addEventListener("pointermove", (e) => {
-      if (!isDragging) return;
 
-      const dx = e.clientX - prevX;
-      const dy = e.clientY - prevY;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-      rotY += dx * 0.004;
-      rotX += dy * 0.004;
+      if (!dragging) return;
 
-      prevX = e.clientX;
-      prevY = e.clientY;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+
+      targetRotY += dx * 0.003;
+      targetRotX += dy * 0.003;
+
+      lastX = e.clientX;
+      lastY = e.clientY;
     });
+
+    function animate() {
+      if (!running) return;
+
+      animationId = requestAnimationFrame(animate);
+
+      if (globe) {
+
+        globe.rotation.y += autoSpin;
+
+        // smooth follow ONLY
+        rotX += (targetRotX - rotX) * 0.08;
+        rotY += (targetRotY - rotY) * 0.08;
+
+        globe.rotation.x = rotX;
+        globe.rotation.y = rotY;
+      }
+
+      renderer.render(scene, camera);
+    }
 
     running = true;
     animate();
-  }
-
-  function animate() {
-    if (!running) return;
-
-    animationId = requestAnimationFrame(animate);
-
-    if (globe) {
-      globe.rotation.y += 0.001;
-
-      globe.rotation.y += rotY;
-      globe.rotation.x += rotX;
-
-      rotY *= 0.92;
-      rotX *= 0.92;
-    }
-
-    renderer.render(scene, camera);
   }
 
   window.addEventListener("resize", () => {
@@ -267,8 +345,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth / window.innerHeight);
   });
 
 });
